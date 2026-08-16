@@ -1,0 +1,11 @@
+sandbox/
+enclaves/
+morpheus/
+*.dll
+*.exe
+*.so
+*.morphx
+*.key
+*.jsonl
+__pycache__/
+*.py[cod]

@@ -1,0 +1,16 @@
+vision public_node_runner
+
+from python import sys
+from python import os
+
+sovereign main() {
+    print("[Morpheus VM] Initializing public miner node via Morpheus polyglot engine...")
+    
+    // Import the validator node script
+    from python_file import perseus_coin_node
+    
+    // Execute the infinite mining loop
+    let _ ← perseus_coin_node.main()
+}
+
+main()
