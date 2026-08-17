@@ -490,7 +490,7 @@ def main():
                     if stats_res.status == 200:
                         net_stats = json.loads(stats_res.read().decode('utf-8'))
                         net_height = net_stats.get("block_height", 0)
-                        if net_height > len(blockchain.chain):
+                        if net_height != len(blockchain.chain):
                             led_req = urllib.request.Request("https://sniff-breeching-police.ngrok-free.dev/api/ledger", headers={'Bypass-Tunnel-Reminder': 'true'})
                             with urllib.request.urlopen(led_req, timeout=5) as led_res:
                                 if led_res.status == 200:
