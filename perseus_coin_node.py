@@ -379,42 +379,47 @@ class MinerNode:
                 
                 # Submit block to the public coordinator node via HTTP POST
                 print("[MINER] Submitting solved block to the public seed node...")
-                try:
-                    payload = json.dumps({
-                        "index": new_block.index,
-                        "previous_hash": new_block.previous_hash,
-                        "timestamp": new_block.timestamp,
-                        "transactions": new_block.transactions,
-                        "poac_solution": solution,
-                        "difficulty": self.blockchain.difficulty,
-                        "hash": new_block.hash
-                    }).encode('utf-8')
-                    req = urllib.request.Request(
-                        "https://sniff-breeching-police.ngrok-free.dev/api/submit_block",
-                        data=payload,
-                        headers={
-                            'Content-Type': 'application/json',
-                            'Bypass-Tunnel-Reminder': 'true'
-                        },
-                        method='POST'
-                    )
-                    with urllib.request.urlopen(req, timeout=5) as response:
-                        if response.status == 200:
-                            res_data = json.loads(response.read().decode('utf-8'))
-                            if res_data.get("status") == "block_accepted":
-                                console.print("[bold green][MINER] Block successfully accepted by the network![/bold green]")
-                                self.blockchain.chain.append(new_block)
-                                self.blockchain.save_chain()
-                                self.blockchain.unconfirmed_transactions = []
-                                return True
-                    console.print("[bold red][MINER] Block rejected by the network.[/bold red]")
-                except Exception as e:
-                    console.print(f"[bold red][MINER] Network submission failed: {e}. Falling back to local append.[/bold red]")
-                    # Fallback to local-only ledger validation for testing/dev/offline modes
-                    if self.blockchain.add_block(new_block, solution):
-                        self.blockchain.unconfirmed_transactions = []
-                        return True
-                break
+                submitted = False
+                while not submitted:
+                    try:
+                        payload = json.dumps({
+                            "index": new_block.index,
+                            "previous_hash": new_block.previous_hash,
+                            "timestamp": new_block.timestamp,
+                            "transactions": new_block.transactions,
+                            "poac_solution": solution,
+                            "difficulty": self.blockchain.difficulty,
+                            "hash": new_block.hash
+                        }).encode('utf-8')
+                        req = urllib.request.Request(
+                            "https://sniff-breeching-police.ngrok-free.dev/api/submit_block",
+                            data=payload,
+                            headers={
+                                'Content-Type': 'application/json',
+                                'Bypass-Tunnel-Reminder': 'true'
+                            },
+                            method='POST'
+                        )
+                        with urllib.request.urlopen(req, timeout=5) as response:
+                            if response.status == 200:
+                                res_data = json.loads(response.read().decode('utf-8'))
+                                status_msg = res_data.get("status")
+                                if status_msg == "block_accepted":
+                                    console.print("[bold green][MINER] Block successfully accepted by the network![/bold green]")
+                                    self.blockchain.chain.append(new_block)
+                                    self.blockchain.save_chain()
+                                    self.blockchain.unconfirmed_transactions = []
+                                    submitted = True
+                                    return True
+                                elif status_msg == "index_mismatch" or status_msg == "block_rejected":
+                                    console.print("[bold yellow][MINER] Network state mismatch. Aborting this block to resync.[/bold yellow]")
+                                    return False
+                                else:
+                                    console.print(f"[bold red][MINER] Block rejected by the network: {status_msg}. Retrying in 5s...[/bold red]")
+                                    time.sleep(5)
+                    except Exception as e:
+                        console.print(f"[bold red][MINER] Network submission failed: {e}. Retrying in 5 seconds...[/bold red]")
+                        time.sleep(5)
 
 def main():
     # Setup ledger path
