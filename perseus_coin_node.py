@@ -483,6 +483,25 @@ def main():
     console.print("[bold cyan][NODE] Starting continuous mining loop. Press Ctrl+C to stop.[/bold cyan]")
     try:
         while True:
+            # 0. Dynamic Sync: Check if local ledger has fallen behind the network
+            try:
+                stats_req = urllib.request.Request("https://sniff-breeching-police.ngrok-free.dev/api/stats", headers={'Bypass-Tunnel-Reminder': 'true'})
+                with urllib.request.urlopen(stats_req, timeout=3) as stats_res:
+                    if stats_res.status == 200:
+                        net_stats = json.loads(stats_res.read().decode('utf-8'))
+                        net_height = net_stats.get("block_height", 0)
+                        if net_height > len(blockchain.chain):
+                            led_req = urllib.request.Request("https://sniff-breeching-police.ngrok-free.dev/api/ledger", headers={'Bypass-Tunnel-Reminder': 'true'})
+                            with urllib.request.urlopen(led_req, timeout=5) as led_res:
+                                if led_res.status == 200:
+                                    remote_chain = json.loads(led_res.read().decode('utf-8'))
+                                    blockchain.chain = [Block(b["index"], b["previous_hash"], b["timestamp"], b["transactions"], b["poac_solution"], b["difficulty"], b["hash"]) for b in remote_chain]
+                                    blockchain.save_chain()
+                                    blockchain.unconfirmed_transactions = []
+                                    console.print(f"[bold green][NODE] Dynamic Sync: Sync\'d ledger to height {len(blockchain.chain)}[/bold green]")
+            except Exception as e:
+                pass
+                
             # Simulate occasional transaction flow
             if random.random() < 0.3:
                 tx_amt = round(random.uniform(5.0, 50.0), 2)
@@ -498,7 +517,7 @@ def main():
                     timestamp=tx_time
                 )
             miner.mine_block()
-            time.sleep(5.0) # 5-second block interval for continuous mining
+            time.sleep(5.0)
     except KeyboardInterrupt:
         console.print("\n[bold red][NODE] Mining stopped by user.[/bold red]")
 
