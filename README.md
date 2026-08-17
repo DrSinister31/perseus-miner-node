@@ -40,9 +40,9 @@ Any open-source node can cryptographically verify that a block is valid by check
 ## 🚀 How to Run and Verify Locally
 
 ### 1. Prerequisites
-Ensure you have Python installed, along with the `rich` styling library:
+Ensure you have Python installed, along with the `rich` styling library and `cryptography` package:
 ```bash
-pip install rich
+pip install rich cryptography
 ```
 
 ### 2. Run the Blockchain Node
