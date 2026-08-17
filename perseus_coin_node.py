@@ -423,7 +423,10 @@ class MinerNode:
 
 def main():
     # Setup ledger path
-    root_dir = os.path.dirname(os.path.abspath(__file__))
+    if getattr(sys, 'frozen', False):
+        root_dir = os.path.dirname(sys.executable)
+    else:
+        root_dir = os.path.dirname(os.path.abspath(__file__))
     local_path = os.path.join(root_dir, "perseus_ledger.json")
     enclave_path = os.path.join(root_dir, "enclaves", "corporate_operations", "perseus_ledger.json")
     if os.path.exists(local_path):
